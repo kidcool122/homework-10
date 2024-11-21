@@ -8,26 +8,26 @@ class PostController
 {
     public function validatePost($inputData) {
         $errors = [];
-        $title = $inputData['title'];
-        $content = $inputData['content'];
+        $title = $inputData['title'] ?? null;
+        $content = $inputData['content'] ?? null;
 
         if (!$title || strlen($title) < 2) {
-            $errors['title'] = 'Title is required and must be at least 2 characters';
+            $errors['title'] = 'Title is required and must be at least 2 characters.';
         }
 
         if (!$content || strlen($content) < 5) {
-            $errors['content'] = 'Content is required and must be at least 5 characters';
+            $errors['content'] = 'Content is required and must be at least 5 characters.';
         }
 
-        if (count($errors)) {
+        if (!empty($errors)) {
             http_response_code(400);
-            echo json_encode($errors);
+            echo json_encode(['errors' => $errors]);
             exit();
         }
 
         return [
-            'title' => htmlspecialchars($title, ENT_QUOTES|ENT_HTML5, 'UTF-8', true),
-            'content' => htmlspecialchars($content, ENT_QUOTES|ENT_HTML5, 'UTF-8', true)
+            'title' => htmlspecialchars($title, ENT_QUOTES | ENT_HTML5, 'UTF-8', true),
+            'content' => htmlspecialchars($content, ENT_QUOTES | ENT_HTML5, 'UTF-8', true),
         ];
     }
 
@@ -43,18 +43,31 @@ class PostController
         $postModel = new Post();
         header("Content-Type: application/json");
         $post = $postModel->getPostById($id);
+
+        if (!$post) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Post not found.']);
+            exit();
+        }
+
         echo json_encode($post);
         exit();
     }
 
     public function savePost() {
         $inputData = json_decode(file_get_contents('php://input'), true);
+        if (!$inputData) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid input.']);
+            exit();
+        }
+
         $postData = $this->validatePost($inputData);
 
         $post = new Post();
         $post->savePost([
             'title' => $postData['title'],
-            'content' => $postData['content']
+            'content' => $postData['content'],
         ]);
 
         http_response_code(201);
@@ -64,18 +77,19 @@ class PostController
 
     public function updatePost($id) {
         if (!$id) {
-            http_response_code(404);
+            http_response_code(400);
+            echo json_encode(['error' => 'Post ID is required.']);
             exit();
         }
 
-        parse_str(file_get_contents('php://input'), $_PUT);
+        $inputData = json_decode(file_get_contents('php://input'), true);
+        if (!$inputData) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid input.']);
+            exit();
+        }
 
-        $inputData = [
-            'id' => $id,
-            'title' => $_PUT['title'] ?? null,
-            'content' => $_PUT['content'] ?? null,
-        ];
-
+        $inputData['id'] = $id;
         $postData = $this->validatePost($inputData);
 
         $post = new Post();
@@ -88,7 +102,8 @@ class PostController
 
     public function deletePost($id) {
         if (!$id) {
-            http_response_code(404);
+            http_response_code(400);
+            echo json_encode(['error' => 'Post ID is required.']);
             exit();
         }
 
@@ -101,22 +116,42 @@ class PostController
     }
 
     public function postsView() {
-        include '../public/assets/views/post/posts-view.html';
+        $viewPath = '../public/assets/views/user/posts-view.html';
+        if (file_exists($viewPath)) {
+            include $viewPath;
+        } else {
+            echo "Error: View file 'posts-view.html' not found.";
+        }
         exit();
     }
 
     public function postsAddView() {
-        include '../public/assets/views/post/posts-add.html';
+        $viewPath = '../public/assets/views/user/posts-add.html';
+        if (file_exists($viewPath)) {
+            include $viewPath;
+        } else {
+            echo "Error: View file 'posts-add.html' not found.";
+        }
         exit();
     }
 
     public function postsUpdateView() {
-        include '../public/assets/views/post/posts-update.html';
+        $viewPath = '../public/assets/views/user/posts-update.html';
+        if (file_exists($viewPath)) {
+            include $viewPath;
+        } else {
+            echo "Error: View file 'posts-update.html' not found.";
+        }
         exit();
     }
 
     public function postsDeleteView() {
-        include '../public/assets/views/post/posts-delete.html';
+        $viewPath = '../public/assets/views/user/posts-delete.html';
+        if (file_exists($viewPath)) {
+            include $viewPath;
+        } else {
+            echo "Error: View file 'posts-delete.html' not found.";
+        }
         exit();
     }
 }
