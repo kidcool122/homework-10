@@ -12,6 +12,21 @@
     <div class="container">
         <h2>All Posts</h2>
         <div id="postList"></div>
+        <div id="editForm" style="display:none;">
+            <h3>Edit Post</h3>
+            <form id="editPostForm">
+                <input type="hidden" id="editPostId">
+                <div class="form-group">
+                    <label for="editTitle">Title</label>
+                    <input type="text" class="form-control" id="editTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="editContent">Content</label>
+                    <textarea class="form-control" id="editContent" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+        </div>
     </div>
 
     <script>
@@ -19,14 +34,75 @@
             $.get('http://localhost:8888/api/posts', function(data) {
                 let postsHtml = '';
                 data.forEach(post => {
-                    postsHtml += `<div class="card mb-3">
+                    postsHtml += `
+                    <div class="card mb-3">
                         <div class="card-body">
                             <h5 class="card-title">${post.title}</h5>
                             <p class="card-text">${post.content}</p>
+                            <button class="btn btn-warning edit-post" data-id="${post.id}" data-title="${post.title}" data-content="${post.content}">Edit</button>
+                            <button class="btn btn-danger delete-post" data-id="${post.id}">Delete</button>
                         </div>
                     </div>`;
                 });
                 $('#postList').html(postsHtml);
+            });
+
+            // Handle Edit button click
+            $(document).on('click', '.edit-post', function(e) {
+                e.preventDefault();
+                
+                var postId = $(this).data('id');
+                var title = $(this).data('title');
+                var content = $(this).data('content');
+
+                $('#editPostId').val(postId);
+                $('#editTitle').val(title);
+                $('#editContent').val(content);
+                $('#editForm').show();
+            });
+
+            // Handle Save changes
+            $('#editPostForm').on('submit', function(e) {
+                e.preventDefault();
+
+                var postId = $('#editPostId').val();
+                var title = $('#editTitle').val();
+                var content = $('#editContent').val();
+
+                $.ajax({
+                    url: 'http://localhost:8888/api/posts/' + postId,
+                    type: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ title: title, content: content }),
+                    success: function(response) {
+                        alert('Post updated successfully');
+                        location.reload();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error:', error);
+                        alert('Failed to update post');
+                    }
+                });
+            });
+
+            // Handle Delete button click
+            $(document).on('click', '.delete-post', function(e) {
+                e.preventDefault();
+                var postId = $(this).data('id');
+                
+                if (confirm('Are you sure you want to delete this post?')) {
+                    $.ajax({
+                        url: 'http://localhost:8888/api/posts/' + postId,
+                        type: 'DELETE',
+                        success: function(response) {
+                            alert('Post deleted successfully');
+                            location.reload();
+                        },
+                        error: function() {
+                            alert('Failed to delete post');
+                        }
+                    });
+                }
             });
         });
     </script>

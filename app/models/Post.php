@@ -2,32 +2,25 @@
 
 namespace app\models;
 
-use app\models\Model;
-
 class Post extends Model {
 
     public function getAllPosts() {
-        $query = "SELECT * FROM posts";
+        $query = "SELECT * FROM posts ORDER BY created_at DESC";
         return $this->fetchAll($query);
     }
 
-    public function getPostById($id) {
-        $query = "SELECT * FROM posts WHERE id = :id";
-        return $this->fetchAllWithParams($query, ['id' => $id]);
-    }
-
-    public function savePost($inputData) {
+    public function savePost($data) {
         $query = "INSERT INTO posts (title, content) VALUES (:title, :content)";
-        return $this->fetchAllWithParams($query, $inputData);
+        return $this->execute($query, $data);
     }
 
-    public function updatePost($inputData) {
+    public function updatePost($data) {
         $query = "UPDATE posts SET title = :title, content = :content WHERE id = :id";
-        return $this->fetchAllWithParams($query, $inputData);
+        return $this->execute($query, $data);
     }
 
-    public function deletePost($inputData) {
+    public function deletePost($id) {
         $query = "DELETE FROM posts WHERE id = :id";
-        return $this->fetchAllWithParams($query, $inputData);
+        return $this->execute($query, ['id' => $id]);
     }
 }
